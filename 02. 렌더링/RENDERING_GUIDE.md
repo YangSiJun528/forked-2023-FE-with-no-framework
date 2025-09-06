@@ -59,6 +59,9 @@ window.requestAnimationFrame(() => {
 `replaceWith`를 사용해 기존 요소를 새 요소로 교체합니다.  
 `requestAnimationFrame`은 브라우저의 다음 리페인트 직전에 렌더링이 일어나도록 보장합니다.
 
+> [NOTE]  
+> [`window.requestAnimationFrame()`](https://developer.mozilla.org/ko/docs/Web/API/Window/requestAnimationFrame)는 Web API 함수, 다름 프레임 생성 시점 맞춰서 콜백 호출 
+
 ## 2단계: 코드 리팩토링
 
 단일 `view.js` 파일에 있던 렌더링 로직을 여러 구성 요소 파일로 분리하여 가독성과 유지 관리성을 향상시킵니다.  
@@ -182,6 +185,26 @@ window.requestAnimationFrame(() => {
 `add`는 컴포넌트를 레지스트리에 등록하고, `renderRoot`는 루트 요소부터 전체 애플리케이션을 렌더링합니다.  
 - `renderWrapper`는 컴포넌트를 감싸고 `data-component` 속성을 가진 자식 요소를 찾아 재귀적으로 렌더링합니다.  
 
+> [NOTE]  
+> `renderWrapper` 부가 설명
+> 함수를 반환하는 것. 실행하면 렌더링을 하는 함수를 반환함.
+> JS 문법을 잘 몰라서 설명 추가함.
+> ```js
+> // 고차 함수(Higher-Order Function) 예시
+> // 'greetingFunction'을 받아서, 나중에 이름을 넣으면 문자열을 반환하는 함수를 돌려줌
+> const createGreeter = greetingFunction => {
+>   // 반환되는 함수: 실제 인사 문자열을 만들어 반환
+>   return name => {
+>       return greetingFunction(name)
+>   }
+> }
+> ``` 
+
+> [NOTE]  
+> 왜 재귀적 갱신을 하는가?
+> 자식 요소까지 재귀 렌더링해야 (변경에 영향을 받는) 트리 전체가 동기화됨  
+> App.js만 그려도 하위가 반영되는 이유는 상태가 단방향으로 상위 → 하위로 전달되기 때문
+
 ## 4단계: 고차 함수 적용
 
 레지스트리 로직을 추상화하기 위해 고차 함수를 사용합니다.  
@@ -193,6 +216,17 @@ window.requestAnimationFrame(() => {
 const renderWrapper = component => {
   // ... (3단계와 동일)
 }
+```
+
+`index.js` - 이건 왜 바꾼건지 모르겠음. 책에는 나오나?
+```javascript
+const render = () => {
+  //... 원래 root 렌터링 로직
+}
+
+// N 초간 요소 랜덤하게 변경하는 로직 추가
+
+render()
 ```
 
 설명: `renderWrapper`는 함수(`component`)를 인자로 받아 새로운 함수를 반환하는 고차 함수입니다.  
@@ -286,6 +320,7 @@ render()
 - `render` 함수는 `replaceWith` 대신 `applyDiff`를 호출합니다.  
 - `applyDiff` 함수는 현재 DOM과 새로 생성된 가상 DOM을 비교하여 변경된 부분만 실제 DOM에 적용합니다.  
 이를 "조정(reconciliation)"이라고 합니다.  
+  - 새로 생김, 없어짐, 달라짐 등을 확인해서 현재 노드 처리하고, 자식 노드 가져와서 재귀적으로 처리.
 - 이 방식은 DOM 조작을 최소화하여 애플리케이션 성능을 향상시킵니다.  
 
 ## 결론
