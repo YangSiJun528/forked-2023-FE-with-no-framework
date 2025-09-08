@@ -1,5 +1,12 @@
 # 웹 구성 요소 가이드
 
+> [NOTE]   
+> 내 메모/정리
+> `HTMLElement`를 상속하면 브라우저에 Custom Element를 등록할 수 있고, Component를 HTML 태그처럼 선언적으로 사용할 수 있다.
+> 
+> JSX와 비슷하다고 느낄 수 있지만, 내부 동작이 다르다. 
+> JSX는 React 문법(슈거) 같은거라서 React에서만 쓸 수 있고, Custom Element가 아님. 
+
 ## 웹 구성 요소 소개
 
 웹 구성 요소는 브라우저에 내장된 API를 사용하여 재사용 가능한 사용자 정의 HTML 태그를 만드는 기술입니다.  
@@ -17,6 +24,7 @@
 ```javascript
 export default class HelloWorld extends HTMLElement {
   // 구성 요소가 DOM에 연결될 때 호출됩니다.
+  // 내 메모: 상태가 변경되면 매번 새로 그려지면서 실행됨.
   connectedCallback() {
     window.requestAnimationFrame(() => {
       const div = document.createElement('div');
@@ -69,7 +77,7 @@ export default class HelloWorld extends HTMLElement {
     }
   }
 
-  // getter와 setter를 사용해 프로퍼티처럼 속성을 다룰 수 있습니다.
+  // DOM 속성(attribute)과 JS 프로퍼티(property)를 연결하기 위해 getter/setter를 활용
   get color() {
     return this.getAttribute('color') || DEFAULT_COLOR;
   }
