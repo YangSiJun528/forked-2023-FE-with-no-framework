@@ -67,6 +67,10 @@ export default () => {
 `router.js`는 `window.location.hash` 값을 확인하고 `hashchange` 이벤트를 수신하여 URL 변경을 감지합니다.  
 경로에 `:id`와 같은 파라미터가 포함된 경우, 정규식을 사용하여 값을 추출합니다.
 
+> [NOTE]   
+> router 오브젝트의 동작 방식이나 정규식에 관한 주석을 `01. fragment-version/router.js`에 추가해둠.  
+> 다른 구현체에서도 역할은 비슷하니까 보고 비교하기.
+
 ## 2단계: History API 기반 라우터
 
 HTML5 History API를 사용하면 `#` 없이 실제 URL 경로를 사용하는 것처럼 라우팅을 구현할 수 있습니다.  
