@@ -46,6 +46,9 @@ export default (initialState = INITAL_STATE) => {
   };
 };
 ```
+> [NOTE]
+> - `Object.freeze()`를 사용해서 model 외부에서 상태 변경을 불가능하게 만들어 반환한다.
+> - 이러면 로직 분리가 명확하고, 유지보수하거나 테스트하기 쉬워진다. 
 
 컨트롤러는 사용자의 입력을 받아 모델의 상태를 변경하고, 변경된 상태를 다시 뷰에 전달하여 화면을 새로 그립니다.  
 이 구조에서는 상태 변경 후 `render` 함수를 수동으로 호출해야 합니다.  
@@ -69,6 +72,11 @@ const render = (state) => {
 
 render(model.getState());
 ```
+
+> [NOTE]
+> - 모델 → model.js 내부 (상태 + 비즈니스 로직)  
+> - 컨트롤러 → index.js 의 events 객체 (사용자 입력 → 모델 변경 → 뷰 갱신)  
+> - 뷰 → render 함수 (상태 → 화면)  
 
 ## 2. 반응형: 옵저버 패턴
 
@@ -124,6 +132,11 @@ const { addChangeListener, ...events } = model;
 addChangeListener(render); // render 함수를 리스너로 등록
 ```
 
+> [NOTE]   
+> `addChangeListener()`로 추가되는 listener 들은 상태 변경 작업 시 호출되는 콜백 작업들이다.  
+> 이 예시에서는 수정이 발생할 때미다 render를 수행하는 listener를 등록한다.    
+> 추가로 로깅이나 여러 작업을 수행하는 listener를 등록할 수도 있다.
+
 ### 2-2. 옵저버블 팩토리
 
 옵저버 로직을 재사용할 수 있도록 별도의 팩토리 함수로 분리할 수 있습니다.  
@@ -153,6 +166,9 @@ export default (model, stateGetter) => {
 };
 ```
 
+> [NOTE]   
+> `Object.keys(model)`로 model의 각 keys(메서드)를 찾아서 `wrapAction(action)`을 실행하는 proxy 객체를 반환함.
+
 ### 2-3. 네이티브 프록시(Proxy) 활용
 
 ES6의 `Proxy` 객체를 사용하면 옵저버블 팩토리를 더 간결하게 만들 수 있습니다.  
@@ -163,6 +179,7 @@ ES6의 `Proxy` 객체를 사용하면 옵저버블 팩토리를 더 간결하게
 export default (initalState) => {
   let listeners = [];
 
+  // Proxy(target, handler)
   const proxy = new Proxy(cloneDeep(initalState), {
     set: (target, name, value) => {
       target[name] = value;
@@ -176,6 +193,11 @@ export default (initalState) => {
   return proxy;
 };
 ```
+
+> [NOTE]   
+> ES6 Proxy 설명하는 자료
+> - https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+> - https://ko.javascript.info/proxy
 
 ## 3. 이벤트 버스 패턴
 
@@ -226,6 +248,58 @@ const addEvents = (targetElement, dispatch) => {
   // ...
 };
 ```
+
+> [NOTE]   
+> `./06. todo-eventbus-no-framework`에 주석으로 동작 간단하게 설명함.  
+> 근데 보다보면 순수 함수를 반환해서 그걸 쓰는 식으로 많이 써서, 함수형에 익숙하지 않은 나는 한눈에 들어오지는 않었음.
+> 함수형인거 의식하면서 보면 좀 더 쉽게 이해됨.  
+> 
+> 그리고 08 예시에서 redux 사용하는데 기존 코드랑 호환됨.   
+> 덕타이핑 덕분에 직접 만든 eventBus와 Redux의 store가 동일한 인터페이를 만족하는 함수로 판단함.  
+> 이건 프레임워크 없는 개발이긴 한데, Redux의 구현과 일치하게 역으로 만들어낸거 같음.
+
+#### 구조 핵심 정리
+
+1. **Event Bus (`model/eventBus.js`)**
+    * 중앙 허브 역할: 모든 상태 변경 중개
+    * `dispatch(event)`: 상태 변경 요청 이벤트 수신
+    * `subscribe(listener)`: 상태 변경 시 실행될 콜백 등록
+    * `getState()`: 현재 상태 반환 (불변 객체)
+2. **Model (`model/model.js`)**
+    * 비즈니스 로직 담당: 이벤트별 상태 변경 결정
+    * `(prevState, event) => newState` 형태의 순수 함수 (= 콜백)
+    * 이벤트 타입에 맞는 함수 실행 → 새 상태 반환
+    * 상태가 이전과 동일하면 구독자 호출 생략 → 불필요한 렌더링 방지
+3. **Event Creators (`model/eventCreators.js`)**
+    * 이벤트 객체 생성 헬퍼 함수 모음
+    * `{ type: 'EVENT_TYPE', payload: data }` 형식의 이벤트 반환
+    * View에서 이벤트 구조를 신경 쓰지 않고 간편하게 호출 가능
+4. **Views (`view/*.js`)**
+    * UI 렌더링 및 사용자 입력 수집
+    * 이벤트 발생 시 eventCreators로 이벤트 생성 → `dispatch` 호출
+    * 상태를 직접 수정하지 않고, 이벤트를 통해 상태 변경 요청
+5. **Controller (`index.js`)**
+    * 앱 초기화 및 구성 요소 연결
+    * 모델과 이벤트 버스 생성
+    * 상태 변경 시 `render` 구독
+    * `render` + `applyDiff`를 통해 변경된 부분만 DOM 업데이트
+
+#### 데이터 흐름 예시: Todo 아이템 삭제
+
+1. **사용자 액션**: 삭제 버튼 클릭
+2. **이벤트 생성 & 전달(in View -> Event Bus)**:
+    * `eventCreators.deleteItem(index)` → 이벤트 객체 생성
+    * `dispatch(event)` 호출
+3. **이벤트 버스 처리**:
+    * `dispatch` → `model(state, event)` 호출 → 새 상태 요청
+4. **상태 변경**:
+    * `deleteItem` 실행 → 해당 아이템 제거된 `newState` 반환
+5. **상태 업데이트 & 전파**:
+    * 이벤트 버스가 내부 state 교체
+    * 구독자(render) 호출 → 새 상태 전달
+6. **UI 렌더링**:
+    * `render` 함수가 새 상태 기반 UI 업데이트
+    * `applyDiff`로 변경된 DOM만 반영
 
 ### 3-2. Redux 라이브러리 사용
 
