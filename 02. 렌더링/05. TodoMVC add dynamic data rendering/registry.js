@@ -9,6 +9,11 @@ const registry = {}
  * 받은 컴포넌트와 그 자식들을 렌더링한다. (실제 DOM인지 가상 DOM인지 구분하지 않고 렌더링한다.)
  * (대부분 JS 메모리로만 존재하는 가상 DOM을 전달받고, 이후 applyDiff를 통해서 변경이 생긴 부분만 변경한다.)
  *
+ * 왜 render 함수는 targetElement, state를 받는가?
+ * renderWrapper는 컴포넌트를 추상화해서 렌더링 로직을 통일하기 위해 존재한다.
+ * ./view/ 아래의 js로 구현된 컴포넌트들은 다들 이 계약(인터페이스 or 덕타이핑)를 구현한다.
+ * 그래서 다음 장에 events 추가되면 render()의 명세는 (targetElement, state, events) => {} 가 된다.
+ *
  * @param {(targetElement: HTMLElement, state: object) => HTMLElement} component
  *        - 원본 컴포넌트 함수 (DOM 엘리먼트를 반환하는 함수)
  * @returns {(targetElement: HTMLElement, state: object) => HTMLElement}
