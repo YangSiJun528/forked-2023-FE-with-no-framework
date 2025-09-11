@@ -30,7 +30,8 @@ const isNodeChanged = (node1, node2) => {
   return false
 }
 
-// applyDiff(현재 DOM 노드, 실제 DOM 노드, 새로운 가상 DOM 노드의 부모)
+// 실제 노드와 그 부모 노드를 통해서 새로운 가상 DOM 노드와 비교하고 가상 DOM 노드와 일치하도록 변경을 수행
+// applyDiff(부모 DOM 노드(realNode의 부모), 실제 DOM 노드, 새로운 가상 DOM 노드)
 const applyDiff = (
   parentNode,
   realNode,
